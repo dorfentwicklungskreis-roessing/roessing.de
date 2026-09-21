@@ -1,5 +1,5 @@
 ---
-name: Gemeinsames Vibe-Coding
+name: KI-Workshop
 description: 'Offener Abend im Dorfgemeinschaftshaus: Was können App und Website fürs Dorf tun? Wir sammeln Ideen und bauen sie mit KI gleich weiter. Für alle, die neugierig sind.'
 startDate: 2026-10-05T19:00:00+02:00
 endDate: 2026-10-05T21:00:00+02:00
@@ -10,11 +10,11 @@ shortlink: d9r
 
 Was früher ein ganzes Team und Monate gebraucht hätte, schaffen heute ein paar
 Leute an einem Abend – mit KI. Genau das probieren wir aus, an unserer eigenen
-[Dorf-App](/app) und an dieser Website. Levin Keller und Luca Elbeshausen laden
+[Dorf-App](/app) und an dieser Website. Manuel Fischer und Levin Keller laden
 dazu ins Dorfgemeinschaftshaus ein.
 
-Wir bauen zusammen etwas, das uns alle angeht: Mitfahrgelegenheiten,
-Sportangebote, eine Zu-verschenken-Ecke, Hilfe beim Digitalen für Ältere. Ein
+Wir bauen zusammen etwas, das uns alle angeht: Sportangebote, eine
+Zu-verschenken-Ecke, Hilfe beim Digitalen für Ältere. Ein
 paar Ideen liegen schon auf dem Tisch, neue sind herzlich willkommen. Ganz
 nebenbei lernen wir dabei die Handgriffe, mit denen sich später auch der eigene
 Urlaub planen oder die Steuererklärung angehen lässt.
