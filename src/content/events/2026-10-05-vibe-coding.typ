@@ -20,7 +20,7 @@
   ]
   #v(0.35cm)
   #text(size: 40pt, weight: "black", tracking: -0.02em, fill: accent)[
-    Gemeinsames \ Vibe-Coding
+    KI-Workshop
   ]
   #v(0.25cm)
   #text(size: 19pt, weight: "medium")[
