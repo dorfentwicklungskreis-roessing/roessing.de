@@ -1,0 +1,7 @@
+name: Kreissportbund Hildesheim e. V.
+address:
+  '@type': PostalAddress
+  streetAddress: Jahnstraße 52
+  addressLocality: Hildesheim
+  postalCode: '31137'
+'@type': Place
