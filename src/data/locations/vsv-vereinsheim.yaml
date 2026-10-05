@@ -1,0 +1,7 @@
+name: VSV-Vereinsheim
+'@type': Place
+address:
+  '@type': PostalAddress
+  streetAddress: Zum Klay 6
+  addressLocality: Rössing
+  postalCode: '31171'
