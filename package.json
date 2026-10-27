@@ -51,7 +51,7 @@
     "ramda": "^0.29.1",
     "react": "^18.0.0",
     "react-dom": "^18.0.0",
-    "satori": "^0.19.2",
+    "satori": "^0.33.0",
     "tailwindcss": "^4"
   },
   "devDependencies": {
