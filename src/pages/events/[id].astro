@@ -59,8 +59,11 @@ const imageUrl = entry.data.image
   ? (await getImage({ src: event.data.image?.src || '' })).src
   : undefined
 
-// OG-Bild: Immer das generierte Bild verwenden (enthält Event-Details)
-const ogImageUrl = `${Astro.site?.origin}/og/events/${entry.id}.png`
+// OG-Bild: Ein hinterlegtes Teaser-Bild hat Vorrang, sonst das generierte Bild
+// (enthält Event-Details)
+const ogImageUrl = imageUrl
+  ? new URL(imageUrl, Astro.site ?? Astro.url).href
+  : `${Astro.site?.origin}/og/events/${entry.id}.png`
 
 // Prüfen, ob das Event in der Vergangenheit liegt
 const eventEndDate = event.data.endDate || event.data.startDate
