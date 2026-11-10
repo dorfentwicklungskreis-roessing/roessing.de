@@ -2,7 +2,15 @@ import { getImage } from 'astro:assets'
 import { getCollection, getEntry } from 'astro:content'
 import sitemap from 'sitemap-ext:config'
 import type { APIRoute } from 'astro'
-import { erstelleFeed, type FeedEingabe } from '@/tools/events/feed'
+import {
+  cacheSekunden,
+  erstelleFeed,
+  type FeedEingabe,
+} from '@/tools/events/feed'
+
+// Serverbetrieb: bei jedem Abruf frisch, damit vergangene Termine sofort
+// herausfallen.
+export const prerender = false
 
 // Maschinenlesbare Liste, keine Seite für Menschen — sie gehört nicht in die
 // Sitemap.
@@ -12,13 +20,17 @@ sitemap(false)
  * `/events.json` — die Veranstaltungen aus `src/content/events/` als JSON.
  *
  * Damit niemand dieselben Termine ein zweites Mal pflegen muss: Die Dorf-App
- * (und wer sonst mag) holt sie sich hier ab. Die Datei entsteht beim Build
- * aus genau denselben Inhalten wie die Seite `/events`.
+ * (und wer sonst mag) holt sie sich hier ab. Die Antwort entsteht bei jedem
+ * Abruf im Worker aus genau denselben Inhalten wie die Seite `/events`.
  *
  * Aufbau und Regeln stehen in `src/tools/events/feed.ts` — dort sind sie
  * auch mit Vitest geprüft.
  */
-export const GET: APIRoute = async ({ site }) => {
+export const GET: APIRoute = async ({ site, cache }) => {
+  const jetzt = new Date()
+  // Am Cloudflare-Edge cachen – höchstens bis Mitternacht (siehe cacheSekunden).
+  cache.set({ maxAge: cacheSekunden(jetzt) })
+
   const origin = site?.origin ?? 'https://xn--rssing-wxa.de'
   const events = await getCollection('events')
 
@@ -54,13 +66,13 @@ export const GET: APIRoute = async ({ site }) => {
     }),
   )
 
-  const feed = erstelleFeed(eingaben, { site: origin, jetzt: new Date() })
+  const feed = erstelleFeed(eingaben, { site: origin, jetzt })
 
   return new Response(JSON.stringify(feed, null, 2), {
     headers: {
       'content-type': 'application/json; charset=utf-8',
-      // Die Datei ist statisch und ändert sich nur mit einem neuen Build.
-      'cache-control': 'public, max-age=3600',
+      // Browser und Dorf-App: ebenfalls höchstens bis Mitternacht.
+      'cache-control': `public, max-age=${cacheSekunden(jetzt)}`,
     },
   })
 }

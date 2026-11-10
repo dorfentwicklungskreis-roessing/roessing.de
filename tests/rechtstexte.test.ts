@@ -30,7 +30,7 @@ test('Impressum ist über den Footer erreichbar', async ({ page }) => {
   await page.goto(BASE_URL)
   await page.locator('footer').getByRole('link', { name: 'Impressum' }).click()
 
-  await expect(page).toHaveURL(`${BASE_URL}/impressum`)
+  await expect(page).toHaveURL(new RegExp(`^${BASE_URL}/impressum/?$`))
   await expect(page.getByRole('heading', { name: 'Impressum' })).toBeVisible()
 })
 
@@ -43,7 +43,7 @@ test('Datenschutzerklärung ist über den Footer erreichbar', async ({
     .getByRole('link', { name: 'Datenschutz' })
     .click()
 
-  await expect(page).toHaveURL(`${BASE_URL}/datenschutz`)
+  await expect(page).toHaveURL(new RegExp(`^${BASE_URL}/datenschutz/?$`))
   await expect(
     page.getByRole('heading', { name: 'Datenschutzerklärung' }),
   ).toBeVisible()
@@ -52,5 +52,5 @@ test('Datenschutzerklärung ist über den Footer erreichbar', async ({
 test('Alter Pfad /imprint leitet auf /impressum weiter', async ({ page }) => {
   await page.goto(`${BASE_URL}/imprint`)
 
-  await expect(page).toHaveURL(`${BASE_URL}/impressum`)
+  await expect(page).toHaveURL(new RegExp(`^${BASE_URL}/impressum/?$`))
 })

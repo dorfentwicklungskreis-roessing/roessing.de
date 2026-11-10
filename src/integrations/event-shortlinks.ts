@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { appendFileSync, existsSync, readdirSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type { AstroIntegration } from 'astro'
@@ -40,8 +40,14 @@ const eventShortlinks = (): AstroIntegration => ({
         return
       }
 
+      // Anhängen statt überschreiben: Der Cloudflare-Adapter schreibt die
+      // Weiterleitungen aus `redirects` (z.B. /imprint) in dieselbe Datei.
       const outPath = join(fileURLToPath(dir), '_redirects')
-      writeFileSync(outPath, `${lines.join('\n')}\n`, 'utf-8')
+      const vorhanden = existsSync(outPath)
+        ? readFileSync(outPath, 'utf-8')
+        : ''
+      const trenner = vorhanden && !vorhanden.endsWith('\n') ? '\n' : ''
+      appendFileSync(outPath, `${trenner}${lines.join('\n')}\n`, 'utf-8')
       logger.info(
         `${lines.length} Event-Shortlink(s) nach _redirects geschrieben.`,
       )

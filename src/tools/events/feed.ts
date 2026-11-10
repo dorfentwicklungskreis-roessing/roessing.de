@@ -153,12 +153,31 @@ const zeit = (datum: Date, allDay: boolean) =>
 /**
  * Ein Termin gilt erst als vorbei, wenn sein letzter Tag zu Ende ist. Ein
  * Fest, das um 19 Uhr angefangen hat, verschwindet sonst um 19:01 aus der
- * Liste — obwohl man noch hingehen könnte. Genauso hält es die Detailseite.
+ * Liste — obwohl man noch hingehen könnte. Dieselbe Regel gilt für die
+ * Startseite, `/events` und die Detailseite.
  */
-const istVorbei = (eingabe: FeedEingabe, jetzt: Date): boolean => {
-  const ende = eingabe.data.endDate ?? eingabe.data.startDate
+export const istVorbei = (
+  termin: { startDate: Date; endDate?: Date | undefined },
+  jetzt: Date,
+): boolean => {
+  const ende = termin.endDate ?? termin.startDate
   const letzterTag = alsDatum(ende)
   return alsDatum(jetzt) > letzterTag
+}
+
+/**
+ * Wie lange eine server-gerenderte Terminliste gecacht werden darf.
+ *
+ * Höchstens bis Mitternacht deutscher Zeit — dann fallen Termine heraus und
+ * die Liste muss neu entstehen. Zusätzlich höchstens `maxSekunden`, damit
+ * ein frisch eingetragener Termin nach einem Deploy bald erscheint.
+ */
+export const cacheSekunden = (jetzt: Date, maxSekunden = 3600): number => {
+  const t = teile(jetzt)
+  const seitMitternacht =
+    Number(t.hour) * 3600 + Number(t.minute) * 60 + Number(t.second)
+  const bisMitternacht = 24 * 3600 - seitMitternacht
+  return Math.max(1, Math.min(bisMitternacht, maxSekunden))
 }
 
 const anschrift = (ort: EingabeOrt): string | undefined => {
@@ -213,8 +232,9 @@ const alsTermin = (eingabe: FeedEingabe, site: string): FeedTermin => {
  * Was als `noindex` markiert ist, bleibt draußen — das Flag heißt „nicht
  * öffentlich auffindbar machen", und ein Feed ist genau das.
  *
- * Die Liste wird beim Build erzeugt und altert deshalb zwischen zwei Builds.
- * Wer sie anzeigt, filtert die Vergangenheit noch einmal selbst heraus.
+ * Die Liste wird im Worker erzeugt und liegt höchstens bis Mitternacht (und
+ * maximal eine Stunde) im Cache. Wer sie länger aufhebt, filtert die
+ * Vergangenheit noch einmal selbst heraus.
  */
 export const erstelleFeed = (
   eingaben: FeedEingabe[],
@@ -224,7 +244,7 @@ export const erstelleFeed = (
   generatedAt: jetzt.toISOString(),
   events: eingaben
     .filter((eingabe) => !eingabe.data.noindex)
-    .filter((eingabe) => !istVorbei(eingabe, jetzt))
+    .filter((eingabe) => !istVorbei(eingabe.data, jetzt))
     .sort((a, b) => a.data.startDate.getTime() - b.data.startDate.getTime())
     .map((eingabe) => alsTermin(eingabe, site)),
 })

@@ -6,8 +6,11 @@ import Layout from '@levino/shipyard-base/layouts/Page.astro'
 import type { GetStaticPaths } from 'astro'
 import Event from '@/components/Event.astro'
 import { dateOnly } from '@/tools/events'
+import { istVorbei } from '@/tools/events/feed'
 import type { Event as EventType, FullEvent } from '@/types'
 
+// Die Detailseiten werden beim Build vorgerendert. Nur die Übersichten
+// (Startseite, /events, /events.json) rendert der Worker zur Laufzeit.
 export const getStaticPaths: GetStaticPaths = async () => {
   const events = await getCollection('events')
   return events.map((entry) => ({
@@ -62,11 +65,9 @@ const imageUrl = entry.data.image
 // OG-Bild: Immer das generierte Bild verwenden (enthält Event-Details)
 const ogImageUrl = `${Astro.site?.origin}/og/events/${entry.id}.png`
 
-// Prüfen, ob das Event in der Vergangenheit liegt
-const eventEndDate = event.data.endDate || event.data.startDate
-const endOfEventDay = new Date(eventEndDate)
-endOfEventDay.setHours(23, 59, 59, 999)
-const isPastEvent = endOfEventDay < new Date()
+// Prüfen, ob das Event in der Vergangenheit liegt (Stand: Build; vorbei erst
+// am Ende des letzten Tages, in deutscher Ortszeit – der Build läuft in UTC)
+const isPastEvent = istVorbei(event.data, new Date())
 const eventStatus = isPastEvent
   ? 'https://schema.org/EventCompleted'
   : 'https://schema.org/EventScheduled'

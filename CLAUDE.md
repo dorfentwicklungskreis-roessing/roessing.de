@@ -59,9 +59,13 @@ Falls Shipyard ein benötigtes Feature nicht unterstützt: **Issue im Shipyard-R
 **⚠️ WICHTIG: Diese Seite wird als Cloudflare WORKER deployed – NICHT als Cloudflare Pages!**
 
 ### Architektur:
-- **Deployment-Typ**: Cloudflare Worker mit Static Assets
-- **Konfiguration**: `wrangler.toml` (Worker-Name: `roessing-de`)
-- **Build-Output**: `dist/` (Astro Static Build)
+- **Deployment-Typ**: Cloudflare Worker im Serverbetrieb (`@astrojs/cloudflare`) mit Static Assets
+- **Konfiguration**: `wrangler.toml` (Worker-Name: `roessing-de`); `astro build` erzeugt daraus `dist/server/wrangler.json`, das `wrangler deploy` verwendet
+- **Build-Output**: `dist/client/` (vorgerenderte Seiten und Assets) und `dist/server/` (Worker)
+- **Hybrid**: Nur die Übersichten, die vom heutigen Datum abhängen – Startseite, `/events` und `/events.json` – setzen `export const prerender = false` und werden im Worker gerendert. Dort tauchen nur kommende Termine auf, ohne dass neu gebaut werden muss. Alles andere, auch die einzelnen Terminseiten `/events/[id]`, wird beim Build vorgerendert.
+- **Edge-Caching**: Die Übersichten setzen `Astro.cache.set({ maxAge: cacheSekunden(jetzt) })` (Cloudflare-Cache-Provider in `astro.config.mjs`). Gecacht wird höchstens bis Mitternacht deutscher Zeit, damit vergangene Termine pünktlich herausfallen, und höchstens eine Stunde, damit neue Termine nach einem Deploy bald erscheinen. `astro preview` cacht nicht; die Header zeigt erst `npx wrangler dev -c dist/server/wrangler.json`.
+- **Bilder**: werden beim Build mit sharp optimiert (`imageService: 'compile'`). Auf server-gerenderten Seiten werden sie unverändert über `/_image` ausgeliefert.
+- **Neue datumsabhängige Seiten** ebenfalls mit `export const prerender = false` und Caching wie oben anlegen und für „vorbei/kommend" `istVorbei` aus `src/tools/events/feed.ts` verwenden (rechnet in deutscher Ortszeit; der Worker läuft in UTC).
 - **Production-URL**: `https://xn--rssing-wxa.de/` (IDN für rössing.de)
 - **Preview-URLs**: `https://{branch}-roessing-de.post-505.workers.dev`
 
@@ -189,12 +193,12 @@ Events werden als Markdown-Dateien in `src/content/events/` gespeichert. Dateina
   ```
 
 ### `/events.json` – die Termine für andere Anwendungen:
-Beim Build entsteht zusätzlich `/events.json` (`src/pages/events.json.ts`). Die Dorf-App holt sich die Veranstaltungen von dort, damit sie **nicht ein zweites Mal gepflegt** werden müssen. Die Regeln des Formats stehen in `src/tools/events/feed.ts` und sind in `src/tools/events/feed.test.ts` (Vitest) sowie `tests/eventsJson.test.ts` (Playwright) festgehalten:
+Zusätzlich liefert der Worker `/events.json` aus (`src/pages/events.json.ts`). Die Dorf-App holt sich die Veranstaltungen von dort, damit sie **nicht ein zweites Mal gepflegt** werden müssen. Die Regeln des Formats stehen in `src/tools/events/feed.ts` und sind in `src/tools/events/feed.test.ts` (Vitest) sowie `tests/eventsJson.test.ts` (Playwright) festgehalten:
 - Nur kommende Termine; vorbei ist ein Termin erst am Ende seines letzten Tages.
 - `noindex`-Termine bleiben draußen – das Flag heißt „nicht öffentlich auffindbar machen".
 - `allDay: true` → `start` ist nur ein Datum (`2026-03-14`), sonst Ortszeit mit Offset (`2026-03-14T09:30:00+01:00`).
 - `url` gesetzt → `url` zeigt auf die externe Primärquelle und `external: true`; die interne Detailseite taucht dann nirgends auf (gleiche Regel wie auf der Website).
-- Die Datei entsteht beim Build und altert zwischen zwei Builds: Wer sie anzeigt, filtert die Vergangenheit noch einmal selbst.
+- Die Datei wird im Worker erzeugt und höchstens bis Mitternacht (maximal eine Stunde) gecacht: Wer sie länger aufhebt, filtert die Vergangenheit noch einmal selbst.
 
 ### ⛔ Vergangene Termine bleiben, wie sie waren
 

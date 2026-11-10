@@ -1,14 +1,23 @@
 # Cloudflare Worker Konfiguration für roessing.de
 # Deployment als Cloudflare Worker mit Static Assets (KEIN Cloudflare Pages!)
+#
+# Serverbetrieb: Der Worker rendert die zeitabhängigen Seiten (Startseite,
+# Veranstaltungen, /events.json) bei jedem Aufruf. Alle anderen Seiten und
+# Dateien liegen als Static Assets vor und werden direkt ausgeliefert.
+# `astro build` erzeugt daraus dist/server/wrangler.json, das `wrangler deploy`
+# automatisch verwendet.
 
 name = "roessing-de"
+
+# Einstiegspunkt des Workers (vom Astro-Cloudflare-Adapter)
+main = "@astrojs/cloudflare/entrypoints/server"
 
 # Aktuelles Kompatibilitätsdatum
 compatibility_date = "2025-12-16"
 
-# Assets-Konfiguration für statische Seiten
 [assets]
 directory = "./dist"
+binding = "ASSETS"
 
 # Preview-Deployments werden über Cloudflare Workers Git-Integration gesteuert
 # Build-Umgebungsvariable WORKERS_CI_BRANCH wird für die Site-URL verwendet
