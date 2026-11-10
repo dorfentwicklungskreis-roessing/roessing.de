@@ -2,7 +2,7 @@
 import { Image } from 'astro:assets'
 import { getCollection, getEntry } from 'astro:content'
 import Layout from '@levino/shipyard-base/layouts/Page.astro'
-import { istVorbei } from '@/tools/events/feed'
+import { cacheSekunden, istVorbei } from '@/tools/events/feed'
 import type { FullEvent } from '@/types'
 import appKarte from '../assets/app/app-karte.png'
 import EventCard from '../components/EventCard.astro'
@@ -22,6 +22,10 @@ export const prerender = false
 // Die nächsten anstehenden Veranstaltungen für den Teaser auf der Startseite.
 // Ein Termin bleibt bis zum Ende seines letzten Tages drin.
 const jetzt = new Date()
+
+// Am Cloudflare-Edge cachen – höchstens bis Mitternacht, wenn Termine
+// herausfallen (siehe cacheSekunden).
+Astro.cache.set({ maxAge: cacheSekunden(jetzt) })
 const upcomingEvents = (await getCollection(
   'events',
   ({ data }) => !istVorbei(data, jetzt),

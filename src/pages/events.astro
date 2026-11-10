@@ -6,7 +6,7 @@ import * as A from 'fp-ts/Array'
 import { pipe } from 'fp-ts/function'
 import * as R from 'fp-ts/Record'
 import { getMonth, getYear } from '@/tools/events'
-import { istVorbei } from '@/tools/events/feed'
+import { cacheSekunden, istVorbei } from '@/tools/events/feed'
 import type { FullEvent } from '@/types'
 import EventCard from '../components/EventCard.astro'
 
@@ -32,6 +32,10 @@ export const prerender = false
 
 // Ein Termin bleibt bis zum Ende seines letzten Tages in der Liste.
 const jetzt = new Date()
+
+// Am Cloudflare-Edge cachen – höchstens bis Mitternacht, wenn Termine
+// herausfallen (siehe cacheSekunden).
+Astro.cache.set({ maxAge: cacheSekunden(jetzt) })
 
 const futureEvents = await getCollection(
   'events',

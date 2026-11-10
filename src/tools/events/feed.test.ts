@@ -1,5 +1,10 @@
 import { describe, expect, test } from 'vitest'
-import { erstelleFeed, type FeedEingabe, istVorbei } from './feed'
+import {
+  cacheSekunden,
+  erstelleFeed,
+  type FeedEingabe,
+  istVorbei,
+} from './feed'
 
 const SITE = 'https://xn--rssing-wxa.de'
 /** Fester „Jetzt"-Zeitpunkt, damit die Tests nicht mit der Uhr altern. */
@@ -218,5 +223,21 @@ describe('istVorbei', () => {
         new Date('2026-11-12T20:00:00+01:00'),
       ),
     ).toBe(false)
+  })
+})
+
+describe('cacheSekunden', () => {
+  test('tagsüber höchstens eine Stunde', () => {
+    expect(cacheSekunden(new Date('2026-11-11T12:00:00+01:00'))).toBe(3600)
+  })
+
+  test('kurz vor Mitternacht Ortszeit nur bis Mitternacht', () => {
+    // 23:50 in Rössing = 22:50 UTC
+    expect(cacheSekunden(new Date('2026-11-11T22:50:00Z'))).toBe(600)
+  })
+
+  test('im Sommer zählt ebenfalls die Ortszeit', () => {
+    // 23:45 MESZ = 21:45 UTC
+    expect(cacheSekunden(new Date('2026-07-01T21:45:00Z'))).toBe(900)
   })
 })

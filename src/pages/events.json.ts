@@ -2,7 +2,11 @@ import { getImage } from 'astro:assets'
 import { getCollection, getEntry } from 'astro:content'
 import sitemap from 'sitemap-ext:config'
 import type { APIRoute } from 'astro'
-import { erstelleFeed, type FeedEingabe } from '@/tools/events/feed'
+import {
+  cacheSekunden,
+  erstelleFeed,
+  type FeedEingabe,
+} from '@/tools/events/feed'
 
 // Serverbetrieb: bei jedem Abruf frisch, damit vergangene Termine sofort
 // herausfallen.
@@ -22,7 +26,11 @@ sitemap(false)
  * Aufbau und Regeln stehen in `src/tools/events/feed.ts` — dort sind sie
  * auch mit Vitest geprüft.
  */
-export const GET: APIRoute = async ({ site }) => {
+export const GET: APIRoute = async ({ site, cache }) => {
+  const jetzt = new Date()
+  // Am Cloudflare-Edge cachen – höchstens bis Mitternacht (siehe cacheSekunden).
+  cache.set({ maxAge: cacheSekunden(jetzt) })
+
   const origin = site?.origin ?? 'https://xn--rssing-wxa.de'
   const events = await getCollection('events')
 
@@ -58,14 +66,13 @@ export const GET: APIRoute = async ({ site }) => {
     }),
   )
 
-  const feed = erstelleFeed(eingaben, { site: origin, jetzt: new Date() })
+  const feed = erstelleFeed(eingaben, { site: origin, jetzt })
 
   return new Response(JSON.stringify(feed, null, 2), {
     headers: {
       'content-type': 'application/json; charset=utf-8',
-      // Kurz cachen: Ändern kann sich die Liste nur mit einem neuen Build
-      // oder wenn ein Termin vorbei ist.
-      'cache-control': 'public, max-age=3600',
+      // Browser und Dorf-App: ebenfalls höchstens bis Mitternacht.
+      'cache-control': `public, max-age=${cacheSekunden(jetzt)}`,
     },
   })
 }

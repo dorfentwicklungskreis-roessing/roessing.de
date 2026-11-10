@@ -165,6 +165,21 @@ export const istVorbei = (
   return alsDatum(jetzt) > letzterTag
 }
 
+/**
+ * Wie lange eine server-gerenderte Terminliste gecacht werden darf.
+ *
+ * Höchstens bis Mitternacht deutscher Zeit — dann fallen Termine heraus und
+ * die Liste muss neu entstehen. Zusätzlich höchstens `maxSekunden`, damit
+ * ein frisch eingetragener Termin nach einem Deploy bald erscheint.
+ */
+export const cacheSekunden = (jetzt: Date, maxSekunden = 3600): number => {
+  const t = teile(jetzt)
+  const seitMitternacht =
+    Number(t.hour) * 3600 + Number(t.minute) * 60 + Number(t.second)
+  const bisMitternacht = 24 * 3600 - seitMitternacht
+  return Math.max(1, Math.min(bisMitternacht, maxSekunden))
+}
+
 const anschrift = (ort: EingabeOrt): string | undefined => {
   const adresse = ort.address
   if (!adresse) return undefined
@@ -217,8 +232,8 @@ const alsTermin = (eingabe: FeedEingabe, site: string): FeedTermin => {
  * Was als `noindex` markiert ist, bleibt draußen — das Flag heißt „nicht
  * öffentlich auffindbar machen", und ein Feed ist genau das.
  *
- * Die Liste wird bei jedem Abruf frisch erzeugt (Serverbetrieb), kann aber
- * bis zu einer Stunde im Cache liegen. Wer sie länger aufhebt, filtert die
+ * Die Liste wird im Worker erzeugt und liegt höchstens bis Mitternacht (und
+ * maximal eine Stunde) im Cache. Wer sie länger aufhebt, filtert die
  * Vergangenheit noch einmal selbst heraus.
  */
 export const erstelleFeed = (
