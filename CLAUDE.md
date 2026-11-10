@@ -59,9 +59,12 @@ Falls Shipyard ein benötigtes Feature nicht unterstützt: **Issue im Shipyard-R
 **⚠️ WICHTIG: Diese Seite wird als Cloudflare WORKER deployed – NICHT als Cloudflare Pages!**
 
 ### Architektur:
-- **Deployment-Typ**: Cloudflare Worker mit Static Assets
-- **Konfiguration**: `wrangler.toml` (Worker-Name: `roessing-de`)
-- **Build-Output**: `dist/` (Astro Static Build)
+- **Deployment-Typ**: Cloudflare Worker im Serverbetrieb (`@astrojs/cloudflare`) mit Static Assets
+- **Konfiguration**: `wrangler.toml` (Worker-Name: `roessing-de`); `astro build` erzeugt daraus `dist/server/wrangler.json`, das `wrangler deploy` verwendet
+- **Build-Output**: `dist/client/` (vorgerenderte Seiten und Assets) und `dist/server/` (Worker)
+- **Server-gerenderte Seiten** (`export const prerender = false`): alles, was vom heutigen Datum abhängt – Startseite, `/events`, `/events/[id]` und `/events.json`. Dort tauchen nur kommende Termine auf, ohne dass neu gebaut werden muss. Alle anderen Seiten werden weiterhin beim Build vorgerendert.
+- **Bilder**: werden beim Build mit sharp optimiert (`imageService: 'compile'`). Auf server-gerenderten Seiten werden sie unverändert über `/_image` ausgeliefert.
+- **Neue datumsabhängige Seiten** ebenfalls mit `export const prerender = false` anlegen und für „vorbei/kommend" `istVorbei` aus `src/tools/events/feed.ts` verwenden (rechnet in deutscher Ortszeit; der Worker läuft in UTC).
 - **Production-URL**: `https://xn--rssing-wxa.de/` (IDN für rössing.de)
 - **Preview-URLs**: `https://{branch}-roessing-de.post-505.workers.dev`
 
@@ -189,12 +192,12 @@ Events werden als Markdown-Dateien in `src/content/events/` gespeichert. Dateina
   ```
 
 ### `/events.json` – die Termine für andere Anwendungen:
-Beim Build entsteht zusätzlich `/events.json` (`src/pages/events.json.ts`). Die Dorf-App holt sich die Veranstaltungen von dort, damit sie **nicht ein zweites Mal gepflegt** werden müssen. Die Regeln des Formats stehen in `src/tools/events/feed.ts` und sind in `src/tools/events/feed.test.ts` (Vitest) sowie `tests/eventsJson.test.ts` (Playwright) festgehalten:
+Zusätzlich liefert der Worker `/events.json` aus (`src/pages/events.json.ts`). Die Dorf-App holt sich die Veranstaltungen von dort, damit sie **nicht ein zweites Mal gepflegt** werden müssen. Die Regeln des Formats stehen in `src/tools/events/feed.ts` und sind in `src/tools/events/feed.test.ts` (Vitest) sowie `tests/eventsJson.test.ts` (Playwright) festgehalten:
 - Nur kommende Termine; vorbei ist ein Termin erst am Ende seines letzten Tages.
 - `noindex`-Termine bleiben draußen – das Flag heißt „nicht öffentlich auffindbar machen".
 - `allDay: true` → `start` ist nur ein Datum (`2026-03-14`), sonst Ortszeit mit Offset (`2026-03-14T09:30:00+01:00`).
 - `url` gesetzt → `url` zeigt auf die externe Primärquelle und `external: true`; die interne Detailseite taucht dann nirgends auf (gleiche Regel wie auf der Website).
-- Die Datei entsteht beim Build und altert zwischen zwei Builds: Wer sie anzeigt, filtert die Vergangenheit noch einmal selbst.
+- Die Datei wird bei jedem Abruf im Worker erzeugt, darf aber bis zu einer Stunde gecacht werden: Wer sie länger aufhebt, filtert die Vergangenheit noch einmal selbst.
 
 ### ⛔ Vergangene Termine bleiben, wie sie waren
 

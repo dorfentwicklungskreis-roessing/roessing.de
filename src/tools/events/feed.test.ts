@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { erstelleFeed, type FeedEingabe } from './feed'
+import { erstelleFeed, type FeedEingabe, istVorbei } from './feed'
 
 const SITE = 'https://xn--rssing-wxa.de'
 /** Fester „Jetzt"-Zeitpunkt, damit die Tests nicht mit der Uhr altern. */
@@ -182,5 +182,41 @@ describe('Veranstaltungs-Feed (/events.json)', () => {
 
     expect(feed.version).toBe(1)
     expect(feed.generatedAt).toBe('2026-02-01T11:00:00.000Z')
+  })
+})
+
+describe('istVorbei', () => {
+  // Startseite und /events werden im Worker gerendert, der in UTC läuft. Das
+  // Tagesende muss trotzdem nach deutscher Ortszeit bestimmt werden.
+  const martinsumzug = { startDate: new Date('2026-11-11T18:00:00+01:00') }
+
+  test('ein Termin ist am eigenen Tag noch nicht vorbei, auch nach Beginn', () => {
+    expect(istVorbei(martinsumzug, new Date('2026-11-11T22:30:00+01:00'))).toBe(
+      false,
+    )
+  })
+
+  test('kurz vor Mitternacht Ortszeit ist er noch nicht vorbei', () => {
+    // 23:59 in Rössing = 22:59 UTC
+    expect(istVorbei(martinsumzug, new Date('2026-11-11T22:59:00Z'))).toBe(
+      false,
+    )
+  })
+
+  test('ab Mitternacht Ortszeit ist er vorbei – auch wenn es in UTC noch der 11. ist', () => {
+    // 00:30 am 12.11. in Rössing = 23:30 UTC am 11.11.
+    expect(istVorbei(martinsumzug, new Date('2026-11-11T23:30:00Z'))).toBe(true)
+  })
+
+  test('bei mehrtägigen Terminen zählt das Enddatum', () => {
+    expect(
+      istVorbei(
+        {
+          startDate: new Date('2026-11-10T10:00:00+01:00'),
+          endDate: new Date('2026-11-12T18:00:00+01:00'),
+        },
+        new Date('2026-11-12T20:00:00+01:00'),
+      ),
+    ).toBe(false)
   })
 })

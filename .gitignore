@@ -60,3 +60,6 @@ src/data/organizers/adventskalender-gastgeber-15.yaml
 src/data/organizers/adventskalender-gastgeber-17.yaml
 src/data/organizers/adventskalender-gastgeber-19.yaml
 src/data/organizers/adventskalender-gastgeber-23.yaml
+
+# Lokaler Zustand von wrangler/workerd (Preview, Dev)
+.wrangler/

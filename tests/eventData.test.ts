@@ -77,3 +77,12 @@ test('eventStatus verwendet endDate wenn vorhanden, sonst startDate', async ({
     'https://schema.org/EventCompleted',
   )
 })
+
+test('Unbekannte Veranstaltung liefert 404', async ({ request }) => {
+  // Die Detailseiten werden im Worker gerendert; eine unbekannte id darf
+  // keine leere Seite mit Status 200 ergeben.
+  const antwort = await request.get(
+    'http://127.0.0.1:4321/events/gibt-es-nicht',
+  )
+  expect(antwort.status()).toBe(404)
+})

@@ -31,6 +31,7 @@
   },
   "dependencies": {
     "@astrojs/check": "^0.9.12",
+    "@astrojs/cloudflare": "^14.4.6",
     "@astrojs/mdx": "^8.1.1",
     "@astrojs/react": "^7.1.1",
     "@astrojs/sitemap": "^3.7.4",
@@ -68,7 +69,8 @@
     "puppeteer": "^23",
     "qrcode": "^1.5.4",
     "start-server-and-test": "^2.0.3",
-    "vitest": "^4.0.0"
+    "vitest": "^4.0.0",
+    "wrangler": "^4.160.0"
   },
   "lavamoat": {
     "allowScripts": {
@@ -76,10 +78,13 @@
       "astro>esbuild": true,
       "astro>sharp": true,
       "cypress": true,
+      "lefthook": true,
       "puppeteer": true,
       "vitest>vite-node>vite>esbuild": true,
       "vitest>vite>esbuild": true,
-      "lefthook": true
+      "wrangler>@cloudflare/unenv-preset>workerd": true,
+      "wrangler>esbuild": true,
+      "wrangler>workerd": true
     }
   }
 }

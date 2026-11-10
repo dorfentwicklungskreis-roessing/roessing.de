@@ -4,6 +4,10 @@ import sitemap from 'sitemap-ext:config'
 import type { APIRoute } from 'astro'
 import { erstelleFeed, type FeedEingabe } from '@/tools/events/feed'
 
+// Serverbetrieb: bei jedem Abruf frisch, damit vergangene Termine sofort
+// herausfallen.
+export const prerender = false
+
 // Maschinenlesbare Liste, keine Seite für Menschen — sie gehört nicht in die
 // Sitemap.
 sitemap(false)
@@ -12,8 +16,8 @@ sitemap(false)
  * `/events.json` — die Veranstaltungen aus `src/content/events/` als JSON.
  *
  * Damit niemand dieselben Termine ein zweites Mal pflegen muss: Die Dorf-App
- * (und wer sonst mag) holt sie sich hier ab. Die Datei entsteht beim Build
- * aus genau denselben Inhalten wie die Seite `/events`.
+ * (und wer sonst mag) holt sie sich hier ab. Die Antwort entsteht bei jedem
+ * Abruf im Worker aus genau denselben Inhalten wie die Seite `/events`.
  *
  * Aufbau und Regeln stehen in `src/tools/events/feed.ts` — dort sind sie
  * auch mit Vitest geprüft.
@@ -59,7 +63,8 @@ export const GET: APIRoute = async ({ site }) => {
   return new Response(JSON.stringify(feed, null, 2), {
     headers: {
       'content-type': 'application/json; charset=utf-8',
-      // Die Datei ist statisch und ändert sich nur mit einem neuen Build.
+      // Kurz cachen: Ändern kann sich die Liste nur mit einem neuen Build
+      // oder wenn ein Termin vorbei ist.
       'cache-control': 'public, max-age=3600',
     },
   })

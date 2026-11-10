@@ -1,0 +1,7 @@
+name: Feuerwehrhaus Rössing
+address:
+  '@type': PostalAddress
+  streetAddress: Kirchstraße 3a
+  addressLocality: Nordstemmen
+  postalCode: '31171'
+'@type': Place

@@ -100,3 +100,38 @@ test('Termine ohne externe Primärquelle verlinken auf die eigene Detailseite', 
   const antwort = await page.goto(`http://127.0.0.1:4321/events/${erster?.id}`)
   expect(antwort?.status()).toBe(200)
 })
+
+test('/events zeigt dieselben Termine wie /events.json (Serverbetrieb)', async ({
+  page,
+  request,
+}) => {
+  // Seite und Feed werden bei jedem Aufruf gerendert und filtern nach
+  // derselben Regel. Wäre die Seite noch vorgerendert, stünden dort Termine,
+  // die im Feed längst fehlen.
+  const feed: { events: FeedTermin[] } = await (
+    await request.get('http://127.0.0.1:4321/events.json')
+  ).json()
+  const imFeed = new Set(feed.events.map((termin) => termin.id))
+
+  await page.goto('http://127.0.0.1:4321/events')
+  const hrefs = await page
+    .locator('a[href^="/events/"]')
+    .evaluateAll((links) => links.map((a) => a.getAttribute('href') ?? ''))
+  const aufDerSeite = new Set(
+    hrefs.map((href) => href.replace(/^\/events\//, '').replace(/\/$/, '')),
+  )
+
+  for (const termin of feed.events.filter((t) => !t.external)) {
+    expect(aufDerSeite, `${termin.id} fehlt auf /events`).toContain(termin.id)
+  }
+  // Was nicht im Feed steht, darf auf der Seite nur stehen, wenn es noindex
+  // ist (der Feed lässt solche Termine bewusst weg).
+  for (const id of aufDerSeite) {
+    if (imFeed.has(id)) continue
+    await page.goto(`http://127.0.0.1:4321/events/${id}`)
+    await expect(
+      page.locator('meta[name="robots"][content*="noindex"]'),
+      `${id} steht auf /events, aber nicht im Feed`,
+    ).toHaveCount(1)
+  }
+})

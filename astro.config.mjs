@@ -2,6 +2,7 @@
 
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
+import cloudflare from '@astrojs/cloudflare'
 import mdx from '@astrojs/mdx'
 import react from '@astrojs/react'
 import sitemapExt from '@inox-tools/sitemap-ext'
@@ -26,6 +27,19 @@ const site = isDevServer
 // https://astro.build/config
 export default defineConfig({
   site,
+  // Serverbetrieb im Cloudflare Worker: Seiten, die vom heutigen Datum
+  // abhängen (Startseite, /events, /events/[id], /events.json), setzen
+  // `export const prerender = false` und werden bei jedem Aufruf frisch
+  // gerendert. Alles andere wird weiterhin beim Build vorgerendert.
+  adapter: cloudflare({
+    // Bilder werden beim Build mit sharp optimiert – ohne Cloudflare Images.
+    imageService: 'compile',
+    // Vorrendern in Node: Typst, satori (OG-Bilder) und Dateizugriffe
+    // laufen nicht in workerd.
+    prerenderEnvironment: 'node',
+  }),
+  // Keine Sessions – sonst legt der Adapter eine KV-Namespace an.
+  session: false,
   // Astro 7 entfernt sonst Leerraum zwischen Inline-Elementen ("Wort<a>Link</a>" klebt zusammen).
   compressHTML: true,
   redirects: {

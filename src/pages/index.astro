@@ -2,6 +2,7 @@
 import { Image } from 'astro:assets'
 import { getCollection, getEntry } from 'astro:content'
 import Layout from '@levino/shipyard-base/layouts/Page.astro'
+import { istVorbei } from '@/tools/events/feed'
 import type { FullEvent } from '@/types'
 import appKarte from '../assets/app/app-karte.png'
 import EventCard from '../components/EventCard.astro'
@@ -14,10 +15,16 @@ const metadata = {
   description: 'Alle Infos über Rössing',
 }
 
+// Serverbetrieb: Die Startseite wird bei jedem Aufruf neu gerendert, damit
+// der Veranstaltungs-Teaser immer die tatsächlich nächsten Termine zeigt.
+export const prerender = false
+
 // Die nächsten anstehenden Veranstaltungen für den Teaser auf der Startseite.
+// Ein Termin bleibt bis zum Ende seines letzten Tages drin.
+const jetzt = new Date()
 const upcomingEvents = (await getCollection(
   'events',
-  ({ data }) => data.startDate > new Date(),
+  ({ data }) => !istVorbei(data, jetzt),
 )
   .then((events) =>
     Promise.all(
@@ -43,10 +50,8 @@ const upcomingEvents = (await getCollection(
 
 const nextEvents = upcomingEvents.slice(0, 3)
 
-// Drei zufällige Vereine für den Teaser auf der Startseite. Die Seite wird
-// statisch gebaut (astro build), dieser Code läuft also einmal pro Deploy –
-// nicht pro Seitenaufruf. Die Auswahl steht damit fest, bis zum nächsten
-// Build, und ist nicht "live" zufällig für jede:n Besucher:in.
+// Drei zufällige Vereine für den Teaser auf der Startseite. Da die Seite im
+// Worker gerendert wird, ist die Auswahl bei jedem Aufruf neu gemischt.
 const vereineTeaser = [...vereine].sort(() => Math.random() - 0.5).slice(0, 3)
 ---
 
